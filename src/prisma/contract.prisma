@@ -1,0 +1,195 @@
+// use prisma-8
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum user_role {
+  @@type("pg/text@1")
+  customer = "CUSTOMER"
+  rider    = "RIDER"
+  admin    = "ADMIN"
+}
+
+enum account_status {
+  @@type("pg/text@1")
+  active    = "ACTIVE"
+  inactive  = "INACTIVE"
+  suspended = "SUSPENDED"
+}
+
+enum rider_availability {
+  @@type("pg/text@1")
+  available = "AVAILABLE"
+  busy      = "BUSY"
+  offline   = "OFFLINE"
+}
+
+enum delivery_status {
+  @@type("pg/text@1")
+  pending    = "PENDING"
+  confirmed  = "CONFIRMED"
+  assigned   = "ASSIGNED"
+  picked_up  = "PICKED_UP"
+  in_transit = "IN_TRANSIT"
+  delivered  = "DELIVERED"
+  cancelled  = "CANCELLED"
+}
+
+enum payment_method {
+  @@type("pg/text@1")
+  cash     = "CASH"
+  card     = "CARD"
+  transfer = "TRANSFER"
+}
+
+enum payment_status {
+  @@type("pg/text@1")
+  pending    = "PENDING"
+  successful = "SUCCESSFUL"
+  failed     = "FAILED"
+  refunded   = "REFUNDED"
+}
+
+// ---------------------------------------------------------------------------
+// Users
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         user_role     @default(customer)
+  status       account_status @default(active)
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  riderProfile     RiderProfile?
+  customerDeliveries Delivery[]    @relation("deliveryCustomer")
+  riderDeliveries    Delivery[]    @relation("deliveryRider")
+  deliveryEvents     DeliveryEvent[]
+
+  @@index([role, status])
+  @@map("users")
+}
+
+// One-to-one profile that only riders own. Holds everything the platform
+// needs to route work to a person: availability, vehicle, verification.
+model RiderProfile {
+  id             String           @id @default(uuid())
+  userId         String           @unique
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  availability   rider_availability @default(offline)
+  vehicleType    String
+  vehiclePlate   String
+  licenseNumber  String
+  isVerified     Boolean          @default(false)
+  city           String?
+  completedRuns  Int              @default(0)
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+
+  @@index([availability, isVerified])
+  @@map("rider_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Deliveries
+// ---------------------------------------------------------------------------
+
+model Delivery {
+  id           String         @id @default(uuid())
+  trackingCode String         @unique
+  status       delivery_status @default(pending)
+
+  customerId String
+  customer   User   @relation("deliveryCustomer", fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  riderId String?
+  rider   User?   @relation("deliveryRider", fields: [riderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // Pickup
+  pickupName    String
+  pickupAddress String
+  pickupCity    String
+  pickupPhone   String
+  pickupNote    String?
+
+  // Drop-off
+  recipientName    String
+  deliveryAddress  String
+  deliveryCity     String
+  deliveryPhone    String
+  deliveryNote     String?
+
+  packageDescription String
+  weightKg           Decimal  @default(1)
+  distanceKm         Decimal  @default(1)
+  fee                Decimal
+  currency           String   @default("USD")
+
+  scheduledFor  TimestamptzString?
+  assignedAt    TimestamptzString?
+  pickedUpAt    TimestamptzString?
+  deliveredAt   TimestamptzString?
+  cancelledAt   TimestamptzString?
+  cancelReason  String?
+  cancellationActorId String?
+
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  payment Payment?
+  events  DeliveryEvent[]
+
+  @@index([customerId, status])
+  @@index([riderId, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@check(expression: "fee >= 0", name: "delivery_fee_non_negative")
+  @@map("deliveries")
+}
+
+// Append-only audit trail of every status change on a delivery.
+model DeliveryEvent {
+  id         String          @id @default(uuid())
+  deliveryId String
+  delivery   Delivery        @relation(fields: [deliveryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  actorId    String?
+  actor      User?           @relation(fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  fromStatus delivery_status?
+  toStatus   delivery_status
+  note       String?
+  createdAt  TimestamptzString @default(now())
+
+  @@index([deliveryId, createdAt])
+  @@map("delivery_events")
+}
+
+// ---------------------------------------------------------------------------
+// Payments
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id         String         @id @default(uuid())
+  reference  String         @unique
+  deliveryId String         @unique
+  delivery   Delivery       @relation(fields: [deliveryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  amount     Decimal
+  currency   String         @default("USD")
+  method     payment_method
+  status     payment_status @default(pending)
+  gatewayRef String?
+  failureReason String?
+  paidAt     TimestamptzString?
+  refundedAt TimestamptzString?
+  createdAt  TimestamptzString @default(now())
+  updatedAt  temporal.updatedAtString()
+
+  @@index([status, createdAt])
+  @@check(expression: "amount >= 0", name: "payment_amount_non_negative")
+  @@map("payments")
+}

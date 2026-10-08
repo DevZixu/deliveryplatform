@@ -1,0 +1,1144 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.deliveries",
+    "label": "Create table \"deliveries\"",
+    "summary": "Creates table \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"deliveries\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"deliveries\"",
+        "sql": "CREATE TABLE \"public\".\"deliveries\" (\n  \"assignedAt\" timestamptz,\n  \"cancelReason\" text,\n  \"cancellationActorId\" text,\n  \"cancelledAt\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'USD' NOT NULL,\n  \"customerId\" text NOT NULL,\n  \"deliveredAt\" timestamptz,\n  \"deliveryAddress\" text NOT NULL,\n  \"deliveryCity\" text NOT NULL,\n  \"deliveryNote\" text,\n  \"deliveryPhone\" text NOT NULL,\n  \"distanceKm\" numeric DEFAULT '1'::numeric NOT NULL,\n  \"fee\" numeric NOT NULL,\n  \"id\" text NOT NULL,\n  \"packageDescription\" text NOT NULL,\n  \"pickedUpAt\" timestamptz,\n  \"pickupAddress\" text NOT NULL,\n  \"pickupCity\" text NOT NULL,\n  \"pickupName\" text NOT NULL,\n  \"pickupNote\" text,\n  \"pickupPhone\" text NOT NULL,\n  \"recipientName\" text NOT NULL,\n  \"riderId\" text,\n  \"scheduledFor\" timestamptz,\n  \"status\" text DEFAULT 'PENDING' NOT NULL,\n  \"trackingCode\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"weightKg\" numeric DEFAULT '1'::numeric NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"deliveries_status_check_6d1168c9\" CHECK (\"status\" IN ('PENDING', 'CONFIRMED', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED')),\n  CONSTRAINT \"delivery_fee_non_negative_1b43b512\" CHECK (fee >= 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"deliveries\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.delivery_events",
+    "label": "Create table \"delivery_events\"",
+    "summary": "Creates table \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"delivery_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"delivery_events\"",
+        "sql": "CREATE TABLE \"public\".\"delivery_events\" (\n  \"actorId\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"deliveryId\" text NOT NULL,\n  \"fromStatus\" text,\n  \"id\" text NOT NULL,\n  \"note\" text,\n  \"toStatus\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"delivery_events_fromStatus_check_ab6b448e\" CHECK (\"fromStatus\" IN ('PENDING', 'CONFIRMED', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED')),\n  CONSTRAINT \"delivery_events_toStatus_check_58a77e7e\" CHECK (\"toStatus\" IN ('PENDING', 'CONFIRMED', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"delivery_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.payments",
+    "label": "Create table \"payments\"",
+    "summary": "Creates table \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"payments\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"payments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"payments\"",
+        "sql": "CREATE TABLE \"public\".\"payments\" (\n  \"amount\" numeric NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'USD' NOT NULL,\n  \"deliveryId\" text NOT NULL,\n  \"failureReason\" text,\n  \"gatewayRef\" text,\n  \"id\" text NOT NULL,\n  \"method\" text NOT NULL,\n  \"paidAt\" timestamptz,\n  \"reference\" text NOT NULL,\n  \"refundedAt\" timestamptz,\n  \"status\" text DEFAULT 'PENDING' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"payment_amount_non_negative_2ce36fec\" CHECK (amount >= 0),\n  CONSTRAINT \"payments_method_check_5dc49e27\" CHECK (\"method\" IN ('CASH', 'CARD', 'TRANSFER')),\n  CONSTRAINT \"payments_status_check_d65fcf38\" CHECK (\"status\" IN ('PENDING', 'SUCCESSFUL', 'FAILED', 'REFUNDED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"payments\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"payments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.rider_profiles",
+    "label": "Create table \"rider_profiles\"",
+    "summary": "Creates table \"rider_profiles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "rider_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"rider_profiles\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"rider_profiles\"",
+        "sql": "CREATE TABLE \"public\".\"rider_profiles\" (\n  \"availability\" text DEFAULT 'OFFLINE' NOT NULL,\n  \"city\" text,\n  \"completedRuns\" int4 DEFAULT 0 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"isVerified\" bool DEFAULT false NOT NULL,\n  \"licenseNumber\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" text NOT NULL,\n  \"vehiclePlate\" text NOT NULL,\n  \"vehicleType\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"rider_profiles_availability_check_91d6c61d\" CHECK (\"availability\" IN ('AVAILABLE', 'BUSY', 'OFFLINE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"rider_profiles\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.users",
+    "label": "Create table \"users\"",
+    "summary": "Creates table \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"users\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"users\"",
+        "sql": "CREATE TABLE \"public\".\"users\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"firstName\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"lastName\" text NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"phone\" text,\n  \"role\" text DEFAULT 'CUSTOMER' NOT NULL,\n  \"status\" text DEFAULT 'ACTIVE' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"users_role_check_b7d9e498\" CHECK (\"role\" IN ('CUSTOMER', 'RIDER', 'ADMIN')),\n  CONSTRAINT \"users_status_check_a34ffd8e\" CHECK (\"status\" IN ('ACTIVE', 'INACTIVE', 'SUSPENDED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"users\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.deliveries.deliveries_trackingCode_key",
+    "label": "Add unique constraint on \"deliveries\" (trackingCode)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "deliveries_trackingCode_key",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"deliveries_trackingCode_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_trackingCode_key",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"deliveries_trackingCode_key\"",
+        "sql": "ALTER TABLE \"public\".\"deliveries\" ADD CONSTRAINT \"deliveries_trackingCode_key\" UNIQUE (\"trackingCode\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"deliveries_trackingCode_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_trackingCode_key",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.payments.payments_reference_key",
+    "label": "Add unique constraint on \"payments\" (reference)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "payments_reference_key",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_reference_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_reference_key",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"payments_reference_key\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD CONSTRAINT \"payments_reference_key\" UNIQUE (\"reference\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"payments_reference_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_reference_key",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.payments.payments_deliveryId_key",
+    "label": "Add unique constraint on \"payments\" (deliveryId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "payments_deliveryId_key",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_deliveryId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_deliveryId_key",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"payments_deliveryId_key\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD CONSTRAINT \"payments_deliveryId_key\" UNIQUE (\"deliveryId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"payments_deliveryId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_deliveryId_key",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.rider_profiles.rider_profiles_userId_key",
+    "label": "Add unique constraint on \"rider_profiles\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "rider_profiles_userId_key",
+        "table": "rider_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"rider_profiles_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "rider_profiles_userId_key",
+          "public",
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"rider_profiles_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"rider_profiles\" ADD CONSTRAINT \"rider_profiles_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"rider_profiles_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "rider_profiles_userId_key",
+          "public",
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.users.users_email_key",
+    "label": "Add unique constraint on \"users\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "users_email_key",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"users_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"users_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"users\" ADD CONSTRAINT \"users_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"users_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_createdAt_idx_9575dbd7",
+    "label": "Create index \"deliveries_createdAt_idx_9575dbd7\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_createdAt_idx_9575dbd7",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_createdAt_idx_9575dbd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_createdAt_idx_9575dbd7\"",
+        "sql": "CREATE INDEX \"deliveries_createdAt_idx_9575dbd7\" ON \"public\".\"deliveries\" (\"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_createdAt_idx_9575dbd7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_customerId_idx_b2a8a46c",
+    "label": "Create index \"deliveries_customerId_idx_b2a8a46c\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_customerId_idx_b2a8a46c",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_customerId_idx_b2a8a46c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_customerId_idx_b2a8a46c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_customerId_idx_b2a8a46c\"",
+        "sql": "CREATE INDEX \"deliveries_customerId_idx_b2a8a46c\" ON \"public\".\"deliveries\" (\"customerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_customerId_idx_b2a8a46c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_customerId_idx_b2a8a46c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_customerId_status_idx_2986b558",
+    "label": "Create index \"deliveries_customerId_status_idx_2986b558\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_customerId_status_idx_2986b558",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_customerId_status_idx_2986b558\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_customerId_status_idx_2986b558\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_customerId_status_idx_2986b558\"",
+        "sql": "CREATE INDEX \"deliveries_customerId_status_idx_2986b558\" ON \"public\".\"deliveries\" (\"customerId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_customerId_status_idx_2986b558\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_customerId_status_idx_2986b558\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_riderId_idx_966752c5",
+    "label": "Create index \"deliveries_riderId_idx_966752c5\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_riderId_idx_966752c5",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_riderId_idx_966752c5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_riderId_idx_966752c5\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_riderId_idx_966752c5\"",
+        "sql": "CREATE INDEX \"deliveries_riderId_idx_966752c5\" ON \"public\".\"deliveries\" (\"riderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_riderId_idx_966752c5\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_riderId_idx_966752c5\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_riderId_status_idx_087b46d8",
+    "label": "Create index \"deliveries_riderId_status_idx_087b46d8\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_riderId_status_idx_087b46d8",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_riderId_status_idx_087b46d8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_riderId_status_idx_087b46d8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_riderId_status_idx_087b46d8\"",
+        "sql": "CREATE INDEX \"deliveries_riderId_status_idx_087b46d8\" ON \"public\".\"deliveries\" (\"riderId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_riderId_status_idx_087b46d8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_riderId_status_idx_087b46d8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.deliveries.deliveries_status_createdAt_idx_58610442",
+    "label": "Create index \"deliveries_status_createdAt_idx_58610442\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "deliveries_status_createdAt_idx_58610442",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"deliveries_status_createdAt_idx_58610442\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_status_createdAt_idx_58610442\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"deliveries_status_createdAt_idx_58610442\"",
+        "sql": "CREATE INDEX \"deliveries_status_createdAt_idx_58610442\" ON \"public\".\"deliveries\" (\"status\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"deliveries_status_createdAt_idx_58610442\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"deliveries_status_createdAt_idx_58610442\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_events.delivery_events_actorId_idx_a58f6b4b",
+    "label": "Create index \"delivery_events_actorId_idx_a58f6b4b\" on \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_events_actorId_idx_a58f6b4b",
+        "table": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_events_actorId_idx_a58f6b4b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_actorId_idx_a58f6b4b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_events_actorId_idx_a58f6b4b\"",
+        "sql": "CREATE INDEX \"delivery_events_actorId_idx_a58f6b4b\" ON \"public\".\"delivery_events\" (\"actorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_events_actorId_idx_a58f6b4b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_actorId_idx_a58f6b4b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_events.delivery_events_deliveryId_createdAt_idx_432caeb8",
+    "label": "Create index \"delivery_events_deliveryId_createdAt_idx_432caeb8\" on \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_events_deliveryId_createdAt_idx_432caeb8",
+        "table": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_events_deliveryId_createdAt_idx_432caeb8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_deliveryId_createdAt_idx_432caeb8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_events_deliveryId_createdAt_idx_432caeb8\"",
+        "sql": "CREATE INDEX \"delivery_events_deliveryId_createdAt_idx_432caeb8\" ON \"public\".\"delivery_events\" (\"deliveryId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_events_deliveryId_createdAt_idx_432caeb8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_deliveryId_createdAt_idx_432caeb8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_events.delivery_events_deliveryId_idx_ebc950f6",
+    "label": "Create index \"delivery_events_deliveryId_idx_ebc950f6\" on \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_events_deliveryId_idx_ebc950f6",
+        "table": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_events_deliveryId_idx_ebc950f6\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_deliveryId_idx_ebc950f6\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_events_deliveryId_idx_ebc950f6\"",
+        "sql": "CREATE INDEX \"delivery_events_deliveryId_idx_ebc950f6\" ON \"public\".\"delivery_events\" (\"deliveryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_events_deliveryId_idx_ebc950f6\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_events_deliveryId_idx_ebc950f6\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.payments.payments_status_createdAt_idx_58610442",
+    "label": "Create index \"payments_status_createdAt_idx_58610442\" on \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "payments_status_createdAt_idx_58610442",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"payments_status_createdAt_idx_58610442\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"payments_status_createdAt_idx_58610442\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"payments_status_createdAt_idx_58610442\"",
+        "sql": "CREATE INDEX \"payments_status_createdAt_idx_58610442\" ON \"public\".\"payments\" (\"status\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"payments_status_createdAt_idx_58610442\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"payments_status_createdAt_idx_58610442\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.rider_profiles.rider_profiles_availability_isVerified_idx_b65beb9f",
+    "label": "Create index \"rider_profiles_availability_isVerified_idx_b65beb9f\" on \"rider_profiles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "rider_profiles_availability_isVerified_idx_b65beb9f",
+        "table": "rider_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"rider_profiles_availability_isVerified_idx_b65beb9f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"rider_profiles_availability_isVerified_idx_b65beb9f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"rider_profiles_availability_isVerified_idx_b65beb9f\"",
+        "sql": "CREATE INDEX \"rider_profiles_availability_isVerified_idx_b65beb9f\" ON \"public\".\"rider_profiles\" (\"availability\", \"isVerified\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"rider_profiles_availability_isVerified_idx_b65beb9f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"rider_profiles_availability_isVerified_idx_b65beb9f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.users.users_role_status_idx_e87879e1",
+    "label": "Create index \"users_role_status_idx_e87879e1\" on \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "users_role_status_idx_e87879e1",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"users_role_status_idx_e87879e1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_role_status_idx_e87879e1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"users_role_status_idx_e87879e1\"",
+        "sql": "CREATE INDEX \"users_role_status_idx_e87879e1\" ON \"public\".\"users\" (\"role\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"users_role_status_idx_e87879e1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_role_status_idx_e87879e1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.deliveries.deliveries_customerId_fkey",
+    "label": "Add foreign key \"deliveries_customerId_fkey\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "deliveries_customerId_fkey",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"deliveries_customerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_customerId_fkey",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"deliveries_customerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"deliveries\"\nADD CONSTRAINT \"deliveries_customerId_fkey\"\nFOREIGN KEY (\"customerId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"deliveries_customerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_customerId_fkey",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.deliveries.deliveries_riderId_fkey",
+    "label": "Add foreign key \"deliveries_riderId_fkey\" on \"deliveries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "deliveries_riderId_fkey",
+        "table": "deliveries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"deliveries_riderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_riderId_fkey",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"deliveries_riderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"deliveries\"\nADD CONSTRAINT \"deliveries_riderId_fkey\"\nFOREIGN KEY (\"riderId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"deliveries_riderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "deliveries_riderId_fkey",
+          "public",
+          "\"public\".\"deliveries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.delivery_events.delivery_events_deliveryId_fkey",
+    "label": "Add foreign key \"delivery_events_deliveryId_fkey\" on \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "delivery_events_deliveryId_fkey",
+        "table": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"delivery_events_deliveryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_events_deliveryId_fkey",
+          "public",
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"delivery_events_deliveryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"delivery_events\"\nADD CONSTRAINT \"delivery_events_deliveryId_fkey\"\nFOREIGN KEY (\"deliveryId\")\nREFERENCES \"public\".\"deliveries\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"delivery_events_deliveryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_events_deliveryId_fkey",
+          "public",
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.delivery_events.delivery_events_actorId_fkey",
+    "label": "Add foreign key \"delivery_events_actorId_fkey\" on \"delivery_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "delivery_events_actorId_fkey",
+        "table": "delivery_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"delivery_events_actorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_events_actorId_fkey",
+          "public",
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"delivery_events_actorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"delivery_events\"\nADD CONSTRAINT \"delivery_events_actorId_fkey\"\nFOREIGN KEY (\"actorId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"delivery_events_actorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_events_actorId_fkey",
+          "public",
+          "\"public\".\"delivery_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.payments.payments_deliveryId_fkey",
+    "label": "Add foreign key \"payments_deliveryId_fkey\" on \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "payments_deliveryId_fkey",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"payments_deliveryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_deliveryId_fkey",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"payments_deliveryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"payments\"\nADD CONSTRAINT \"payments_deliveryId_fkey\"\nFOREIGN KEY (\"deliveryId\")\nREFERENCES \"public\".\"deliveries\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"payments_deliveryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_deliveryId_fkey",
+          "public",
+          "\"public\".\"payments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.rider_profiles.rider_profiles_userId_fkey",
+    "label": "Add foreign key \"rider_profiles_userId_fkey\" on \"rider_profiles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "rider_profiles_userId_fkey",
+        "table": "rider_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"rider_profiles_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "rider_profiles_userId_fkey",
+          "public",
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"rider_profiles_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"rider_profiles\"\nADD CONSTRAINT \"rider_profiles_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"rider_profiles_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "rider_profiles_userId_fkey",
+          "public",
+          "\"public\".\"rider_profiles\""
+        ]
+      }
+    ]
+  }
+]
