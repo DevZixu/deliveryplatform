@@ -1,16 +1,21 @@
 {
-  "name": "deliveryplatform",
+  "name": "delivery-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "REST API backend for a full-stack delivery platform (customers, riders, admins)",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "contract:emit": "prisma contract emit"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "contract:emit": "prisma contract emit",
+    "db:plan": "prisma migration plan",
+    "db:migrate": "prisma db migrate",
+    "db:status": "prisma migration status",
+    "db:verify": "prisma db verify",
+    "db:seed": "tsx scripts/seed.ts",
+    "test:smoke": "tsx scripts/smoke.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@prisma/orm-postgres": "^8.0.0-rc.16",
     "bcryptjs": "^3.0.3",
@@ -32,5 +37,8 @@
     "@types/node": "^26.6.4",
     "prisma": "^8.0.0-rc.21",
     "tsx": "^4.23.15"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
