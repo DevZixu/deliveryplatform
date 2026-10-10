@@ -18,6 +18,9 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+        # IMPORTANT: Aiven needs the libpq-compat flag or the deploy fails with
+        # "self-signed certificate in certificate chain". Use:
+        #   postgres://avnadmin:...@...aivencloud.com:PORT/deliveryplatform?sslmode=require&uselibpqcompat=true
       - key: CORS_ORIGIN
         sync: false
       - key: JWT_EXPIRES_IN
