@@ -1,0 +1,24 @@
+# Render Blueprint for the delivery-platform API.
+# In Render: New + > Blueprint > pick this repo. Set the secret env vars it asks for.
+services:
+  - type: web
+    name: delivery-platform-api
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm ci --include=dev && npm run contract:emit
+    startCommand: npm run db:migrate && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 1d
