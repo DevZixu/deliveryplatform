@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { db } from '../src/prisma/db.js';
@@ -19,10 +20,13 @@ type SeedUser = {
   };
 };
 
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    ?? 'admin@platform.test';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Admin1234!';
+
 const USERS: SeedUser[] = [
   {
-    email: 'admin@platform.test',
-    password: 'Admin1234!',
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
     firstName: 'Ada',
     lastName: 'Admin',
     phone: '+15550000001',
