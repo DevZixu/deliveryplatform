@@ -11,7 +11,7 @@ import type { AccountStatus, UserRole, UserRow } from '../types/db.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACCOUNT_STATUSES: AccountStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
-const ROLES: UserRole[] = ['CUSTOMER', 'RIDER', 'ADMIN'];
+const ROLES: UserRole[] = ['CUSTOMER', 'RIDER', 'ADMIN', 'STAFF'];
 
 async function loadUserWithProfile(user: UserRow) {
   const profile = user.role === 'RIDER' ? await db.orm.public.RiderProfile.first({ userId: user.id }) : null;

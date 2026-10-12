@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0055f2532f279509e5d098be55e55131fbf6798e3c9d6439fc4486bdb65b65f9'>;
+  StorageHashBase<'31d6aa4d4250beb9a8e162a79385c9febe088174edf1a077f3ff074917ddabdf'>;
 export type ExecutionHash =
   ExecutionHashBase<'dd2fa1509d9eb113011ba918fdf559f7781ee7c24cab15286b4a3f7e7157fd99'>;
 export type ProfileHash =
@@ -332,7 +332,7 @@ export type FieldOutputTypes = {
       readonly lastName: CodecTypes['pg/text@1']['output'];
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly phone: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN';
+      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN' | 'STAFF';
       readonly status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -438,7 +438,7 @@ export type FieldInputTypes = {
       readonly lastName: CodecTypes['pg/text@1']['input'];
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly phone: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN';
+      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN' | 'STAFF';
       readonly status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -544,7 +544,7 @@ export type StorageColumnTypes = {
       readonly lastName: CodecTypes['pg/text@1']['output'];
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly phone: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN';
+      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN' | 'STAFF';
       readonly status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -650,7 +650,7 @@ export type StorageColumnInputTypes = {
       readonly lastName: CodecTypes['pg/text@1']['input'];
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly phone: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN';
+      readonly role: 'CUSTOMER' | 'RIDER' | 'ADMIN' | 'STAFF';
       readonly status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -756,7 +756,7 @@ export namespace Models {
     lastName: CodecTypes['pg/text@1']['output'];
     passwordHash: CodecTypes['pg/text@1']['output'];
     phone: CodecTypes['pg/text@1']['output'] | null;
-    role: 'CUSTOMER' | 'RIDER' | 'ADMIN';
+    role: 'CUSTOMER' | 'RIDER' | 'ADMIN' | 'STAFF';
     status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     customerDeliveries: public_Delivery[];
@@ -1493,7 +1493,7 @@ type ContractBase = Omit<
             };
             readonly user_role: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['CUSTOMER', 'RIDER', 'ADMIN'];
+              readonly values: readonly ['CUSTOMER', 'RIDER', 'ADMIN', 'STAFF'];
             };
           };
         };
@@ -2161,6 +2161,7 @@ type ContractBase = Omit<
               { readonly name: 'customer'; readonly value: 'CUSTOMER' },
               { readonly name: 'rider'; readonly value: 'RIDER' },
               { readonly name: 'admin'; readonly value: 'ADMIN' },
+              { readonly name: 'staff'; readonly value: 'STAFF' },
             ];
           };
         };

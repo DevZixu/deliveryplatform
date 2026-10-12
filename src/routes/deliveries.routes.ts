@@ -66,11 +66,11 @@ router.get('/:id/payment', deliveries.getPayment);
 
 router.post(
   '/:id/assign',
-  authorize('ADMIN'),
+  authorize('ADMIN', 'STAFF'),
   validateBody({ riderId: { required: true, type: 'string', maxLength: 40 } }),
   deliveries.assign,
 );
-router.post('/:id/unassign', authorize('ADMIN'), deliveries.unassign);
+router.post('/:id/unassign', authorize('ADMIN', 'STAFF'), deliveries.unassign);
 router.post('/:id/accept', authorize('RIDER'), deliveries.accept);
 router.post(
   '/:id/cancel',

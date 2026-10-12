@@ -52,7 +52,7 @@ async function loadDelivery(
     .first();
 
   if (!delivery) throw ApiError.notFound('Delivery not found');
-  if (user.role === 'ADMIN') return delivery;
+  if (user.role === 'ADMIN' || user.role === 'STAFF') return delivery;
   if (user.role === 'CUSTOMER') {
     if (delivery.customerId !== user.id) throw ApiError.notFound('Delivery not found');
     return delivery;
@@ -81,7 +81,7 @@ function scopedDeliveries(req: Request, user: UserRow) {
     );
   }
 
-  if (user.role === 'ADMIN') {
+  if (user.role === 'ADMIN' || user.role === 'STAFF') {
     const customerId = getStringQuery(req, 'customerId');
     const riderId = getStringQuery(req, 'riderId');
     if (customerId) q = q.where((d) => d.customerId.eq(customerId));

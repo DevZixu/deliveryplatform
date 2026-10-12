@@ -148,6 +148,10 @@
               {
                 "name": "admin",
                 "value": "ADMIN"
+              },
+              {
+                "name": "staff",
+                "value": "STAFF"
               }
             ]
           }
@@ -1878,8 +1882,8 @@
             "users": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('CUSTOMER', 'RIDER', 'ADMIN')",
-                  "name": "users_role_check_b7d9e498",
+                  "expression": "\"role\" IN ('CUSTOMER', 'RIDER', 'ADMIN', 'STAFF')",
+                  "name": "users_role_check_17d28f90",
                   "prefix": "users_role_check"
                 },
                 {
@@ -2041,7 +2045,8 @@
               "values": [
                 "CUSTOMER",
                 "RIDER",
-                "ADMIN"
+                "ADMIN",
+                "STAFF"
               ]
             }
           }
@@ -2050,7 +2055,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0055f2532f279509e5d098be55e55131fbf6798e3c9d6439fc4486bdb65b65f9"
+    "storageHash": "31d6aa4d4250beb9a8e162a79385c9febe088174edf1a077f3ff074917ddabdf"
   },
   "execution": {
     "executionHash": "dd2fa1509d9eb113011ba918fdf559f7781ee7c24cab15286b4a3f7e7157fd99",

@@ -7,9 +7,11 @@ import { rateLimit } from 'express-rate-limit';
 import { config } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import authRoutes from './routes/auth.routes.js';
+import adminStaffsRoutes from './routes/admin.staffs.routes.js';
 import deliveriesRoutes from './routes/deliveries.routes.js';
 import paymentsRoutes from './routes/payments.routes.js';
 import ridersRoutes from './routes/riders.routes.js';
+import staffRoutes from './routes/staff.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import usersRoutes from './routes/users.routes.js';
 
@@ -43,6 +45,8 @@ export function createApp() {
   app.use('/api/deliveries', deliveriesRoutes);
   app.use('/api/payments', paymentsRoutes);
   app.use('/api/stats', statsRoutes);
+  app.use('/api/admin/staffs', adminStaffsRoutes);
+  app.use('/api/staff', staffRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -9,6 +9,7 @@ enum user_role {
   customer = "CUSTOMER"
   rider    = "RIDER"
   admin    = "ADMIN"
+  staff    = "STAFF"
 }
 
 enum account_status {
